@@ -49,17 +49,25 @@
       </div>
     </div>
 
-    <button v-on:click='sendData' v-if='left>0 || right>0 || middle>0' type='button'>Calculate!</button>
+    <button v-on:click='saveCircuit' v-if='left>0 || right>0 || middle>0' type='button'>Save circuit</button>
+    <button v-on:click='sendSingleNetwork' v-if='connectionsNumber === 0 && (left>0 || right>0 || middle>0)' type='button'>Calculate</button>
+
+    <div class="connectionsForm">
+      <Connections @connection="handleConnecions($event, i)" v-for="(n, i) in connectionsNumber" :key="60+n"/>
+    </div>
+    <button v-on:click='calculate' v-if='connectionsNumber > 0' type='button'>Calculate</button>
   </div>
 </template>
 
 <script>
 import ElementForm from './ElementForm.vue'
+import Connections from './Connections.vue'
 
 export default {
   name: 'TType',
   components: {
-    ElementForm
+    ElementForm,
+    Connections
   },
   data() {
     return {
@@ -69,6 +77,10 @@ export default {
       leftElements: [],
       middleElements: [],
       rightElements: [],
+      savedCircuit: [],
+      circuits: [],
+      connectionsNumber: 0,
+      connections: {},
 
       configKonva: {
         width: 2000,
@@ -141,104 +153,129 @@ export default {
   methods: {
     handleLeftElementValues(value, index) {
       this.leftElements[index] = value;
-      console.log(this.leftElements);
     },
 
     handleMiddleElementValues(value, index) {
       this.middleElements[index] = value;
-      console.log(this.middleElements);
     },
 
     handleRightElementValues(value, index) {
       this.rightElements[index] = value;
-      console.log(this.rightElements);
     },
 
-    sendData() {
-      this.$http.post('www.test.com/test', {
-        elements: {
-          left: this.leftElements,
-          middle: this.middleElements,
-          right: this.rightElements
-        }
-      })
-      .then(function(response) {
-        console.log(response);
-      })
-      .catch(function(error) {
-        console.log(error);
-      });
-    }
-  },
-
-  computed: {
-    leftNum: function() {
-      return this.left;
-    }
-  },
-
-  watch: {
-    left: function() {
-      var vm = this;
-      console.log(this.left);
-      vm.$refs.layer.getStage().draw();
-
-      setTimeout(function() {
-        var index = vm.$refs.rectLeft.length-1
-        var distance = index * 100;
-        if(vm.$refs.rectLeft.length > 0) {
-          vm.$refs.rectLeft[index].getStage().setAttr('x', 650-distance);
-        }
-        vm.$refs.layer.getStage().draw();
-      });
+    handleConnecions(type, index) {
+      this.connections[index] = type;
+      console.log(this.connections);
     },
 
-    middle: function() {
-      var vm = this;
-      vm.$refs.layer.getStage().draw();
+    saveCircuit() {
+      this.savedCircuit.push(this.leftElements, this.middleElements, this.rightElements);
+      this.circuits.push(this.savedCircuit);
 
-      setTimeout(function() {
-        var index = vm.$refs.rectMid.length-1
-        var distance = index * 100;
-        if(vm.$refs.rectMid.length > 0) {
-          vm.$refs.rectMid[index].getStage().setAttr('y', 60+distance);
-        }
-        vm.$refs.layer.getStage().draw();
-      });
+      this.savedCircuit = [];
+      this.left = 0;
+      this.middle = 0;
+      this.right = 0;
 
+      this.connectionsNumber++
+
+        // if (this.circuits.length > 1) this.connectionsNumber++
     },
+      sendSingleNetwork() {
+        this.$http.post('www.test.com/test', {
+          elements: {
+            left: this.leftElements,
+            middle: this.middleElements,
+            right: this.rightElements
+          }
+        })
+        .then(function(response) {
+        })
+        .catch(function(error) {
+        });
+      },
 
-    right: function() {
-      var vm = this;
-      vm.$refs.layer.getStage().draw();
-
-      setTimeout(function() {
-        var index = vm.$refs.rectRight.length-1
-        var distance = index * 100;
-
-        if(vm.$refs.rectRight.length > 0) {
-          vm.$refs.rectRight[index].getStage().setAttr('x', 780+distance);
-        }
-        vm.$refs.layer.getStage().draw();
-      });
-    }
+      calculate() {
+        this.$http.post('www.test.com/test2', {
+          circuits: {
+            circuits: this.circuits,
+            connections: this.connections
+          }
+        })
+        .then(function(response) {
+        })
+        .catch(function(error) {
+        });
+      }
   },
-}
+
+      computed: {
+        leftNum: function() {
+          return this.left;
+        }
+      },
+
+      watch: {
+        left: function() {
+          var vm = this;
+          vm.$refs.layer.getStage().draw();
+
+          setTimeout(function() {
+            var index = vm.$refs.rectLeft.length-1
+            var distance = index * 100;
+            if(vm.$refs.rectLeft.length > 0) {
+              vm.$refs.rectLeft[index].getStage().setAttr('x', 650-distance);
+            }
+            vm.$refs.layer.getStage().draw();
+          });
+        },
+
+        middle: function() {
+          var vm = this;
+          vm.$refs.layer.getStage().draw();
+
+          setTimeout(function() {
+            var index = vm.$refs.rectMid.length-1
+            var distance = index * 100;
+            if(vm.$refs.rectMid.length > 0) {
+              vm.$refs.rectMid[index].getStage().setAttr('y', 60+distance);
+            }
+            vm.$refs.layer.getStage().draw();
+          });
+
+        },
+
+        right: function() {
+          var vm = this;
+          vm.$refs.layer.getStage().draw();
+
+          setTimeout(function() {
+            var index = vm.$refs.rectRight.length-1
+            var distance = index * 100;
+
+            if(vm.$refs.rectRight.length > 0) {
+              vm.$refs.rectRight[index].getStage().setAttr('x', 780+distance);
+            }
+            vm.$refs.layer.getStage().draw();
+          });
+        }
+      },
+  }
 </script>
 
 <style>
-  .leftWrap {
-    float: left;
-    margin: 20px;
-  }
+.leftWrap {
+  float: left;
+  margin: 20px;
+}
 
-  .middleWrap {
-    float: left;
-    margin: 20px;
-  }
+.middleWrap {
+  float: left;
+  margin: 20px;
+}
 
-  .rightWrap {
-    float: left;
-    margin: 20px;
-  }
+.rightWrap {
+  float: left;
+  margin: 20px;
+}
 </style>
